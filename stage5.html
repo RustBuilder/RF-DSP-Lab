@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="WAV、CSV、IQ 数据的频率、带宽、SNR、占空比和符号率中文交互测量台">
+  <title>阶段 5：信号测量与文件分析 | RF DSP Lab</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="stage2.css">
+  <link rel="stylesheet" href="stage3.css">
+  <link rel="stylesheet" href="stage4.css">
+  <link rel="stylesheet" href="stage5.css">
+</head>
+<body>
+  <nav class="top-nav">
+    <a class="brand" href="roadmap.html">RF DSP LAB</a>
+    <div>
+      <a href="index.html">阶段 1</a>
+      <a href="stage2.html">阶段 2</a>
+      <a href="stage3.html">阶段 3</a>
+      <a href="stage4.html">阶段 4</a>
+      <a class="current" href="stage5.html">阶段 5</a>
+      <a href="roadmap.html">完整路线</a>
+    </div>
+  </nav>
+
+  <header class="stage-hero">
+    <div>
+      <p class="eyebrow">LEVEL 05 · SIGNAL MEASUREMENT</p>
+      <h1>不只看见信号，<br><span>还要量出它的性格。</span></h1>
+      <p class="intro">这一阶段把前面的 FFT、STFT、调制、IQ 串起来：给一段录制信号或模拟信号，测中心频率、占用带宽、SNR、占空比和可能的符号率，并生成一份简短测量报告。</p>
+    </div>
+    <a class="route-button ghost" href="roadmap.html">查看六阶段路线</a>
+  </header>
+
+  <main class="stage-layout">
+    <aside class="control-panel stage-controls">
+      <div class="panel-heading">
+        <span>阶段 5 控制台</span>
+        <button id="resetStage5" class="text-button" type="button">恢复默认</button>
+      </div>
+
+      <section class="control-section">
+        <div class="section-index">01</div>
+        <div class="control-content">
+          <h2>数据来源</h2>
+          <label>
+            测量对象
+            <select id="measurementSource">
+              <option value="fm" selected>模拟：窄带 FM 载波</option>
+              <option value="ook">模拟：OOK 脉冲发射</option>
+              <option value="chirp">模拟：扫频雷达脉冲</option>
+              <option value="iq">模拟：复数 IQ / QPSK</option>
+              <option value="file">导入：WAV / CSV / IQ 文本</option>
+            </select>
+          </label>
+          <label id="fileGroup" class="file-drop" hidden>
+            <span>选择文件</span>
+            <input id="signalFile" type="file" accept=".wav,.csv,.txt">
+            <small>CSV/TXT 支持一列实数、两列 I/Q、三列 time/I/Q；WAV 支持常见 PCM，双声道会按 I/Q 处理。</small>
+          </label>
+          <p id="fileStatus" class="control-hint">当前使用内置信号，可先练测量流程。</p>
+        </div>
+      </section>
+
+      <section class="control-section">
+        <div class="section-index">02</div>
+        <div class="control-content">
+          <h2>采样与观测</h2>
+          <label>
+            采样率 <output id="measureSampleRateValue">96 kSa/s</output>
+            <span class="value-control">
+              <input id="measureSampleRateInput" class="number-input" type="number" min="8000" max="250000" step="1000" value="96000" inputmode="numeric" aria-label="输入采样率">
+              <span>Sa/s</span>
+            </span>
+            <input id="measureSampleRate" type="range" min="8000" max="250000" step="1000" value="96000">
+          </label>
+          <label>
+            观测时长 <output id="durationValue">120 ms</output>
+            <input id="duration" type="range" min="30" max="500" step="10" value="120">
+          </label>
+          <label>
+            噪声强度 <output id="measureNoiseValue">8%</output>
+            <input id="measureNoise" type="range" min="0" max="45" step="1" value="8">
+          </label>
+          <p class="control-hint">导入 WAV 时会自动读取文件采样率；导入 CSV 时使用这里的采样率。</p>
+        </div>
+      </section>
+
+      <section class="control-section">
+        <div class="section-index">03</div>
+        <div class="control-content">
+          <h2>测量参数</h2>
+          <label>
+            占用功率 <output id="occupiedPowerValue">99%</output>
+            <input id="occupiedPower" type="range" min="80" max="99" step="1" value="99">
+          </label>
+          <label>
+            活动门限 <output id="activityThresholdValue">35%</output>
+            <input id="activityThreshold" type="range" min="5" max="90" step="1" value="35">
+          </label>
+          <label>
+            频谱窗
+            <select id="measureWindow">
+              <option value="hann" selected>Hann：通用</option>
+              <option value="blackman">Blackman：低旁瓣</option>
+              <option value="rect">Rect：窄主瓣</option>
+            </select>
+          </label>
+          <button id="copyReport" class="secondary-button" type="button">复制测量报告</button>
+        </div>
+      </section>
+    </aside>
+
+    <div class="workspace">
+      <section class="concept-strip">
+        <article><small>峰值频率</small><strong id="peakFrequencyMetric">24.00 kHz</strong></article>
+        <article><small>占用带宽</small><strong id="occupiedBandwidthMetric">4.20 kHz</strong></article>
+        <article><small>SNR 估计</small><strong id="snrMetric">28.0 dB</strong></article>
+        <article><small>占空比</small><strong id="dutyMetric">100%</strong></article>
+      </section>
+
+      <section class="chart-card explanation-card">
+        <div>
+          <p class="chart-kicker">MEASUREMENT FLOW</p>
+          <h2 id="measurementTitle">先找峰值，再量带宽。</h2>
+        </div>
+        <div>
+          <p id="measurementText">测量不是“看图猜”：先确认采样率和信号类型，再用频谱定位峰值，用累计功率估计占用带宽，用噪声底估计 SNR，最后用包络门限估计占空比。</p>
+          <div class="measurement-flow">
+            <span>sample</span><i>FFT</i><span>peak</span><i>OBW</i><span>SNR</span><i>envelope</i><span>report</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="chart-card">
+        <div class="chart-heading">
+          <div>
+            <p class="chart-kicker">TIME & ENVELOPE</p>
+            <h2>时域波形与包络</h2>
+          </div>
+          <div class="chart-heading-side">
+            <div class="legend">
+              <span><i class="raw"></i><b>信号</b></span>
+              <span><i class="filtered"></i><b>包络</b></span>
+            </div>
+            <span class="chart-badge" id="timeBadge">0 - 120 ms</span>
+            <div class="chart-toolbar" aria-label="测量时域图控制">
+              <button type="button" data-measure-chart="time" data-action="zoom-in">X+</button>
+              <button type="button" data-measure-chart="time" data-action="zoom-out">X−</button>
+              <button type="button" data-measure-chart="time" data-action="y-in">Y+</button>
+              <button type="button" data-measure-chart="time" data-action="y-out">Y−</button>
+              <button type="button" data-measure-chart="time" data-action="auto">自动</button>
+              <button type="button" data-measure-chart="time" data-action="reset">复位</button>
+            </div>
+          </div>
+        </div>
+        <div class="chart-stage">
+          <canvas id="measureTimeCanvas" aria-label="时域波形与包络" tabindex="0"></canvas>
+          <output id="timeCursor" class="chart-cursor">拖拽平移 · 滚轮缩放 X · Shift + 滚轮缩放 Y</output>
+        </div>
+        <div class="chart-footer">
+          <p class="chart-note" id="timeNote">包络超过活动门限的比例，就是占空比的第一版估计。</p>
+          <output id="timeRange" class="range-readout"></output>
+        </div>
+      </section>
+
+      <section class="chart-card">
+        <div class="chart-heading">
+          <div>
+            <p class="chart-kicker">SPECTRUM MEASUREMENT</p>
+            <h2>频谱、峰值与占用带宽</h2>
+          </div>
+          <div class="chart-heading-side">
+            <span class="chart-badge" id="spectrumBadge">99% OBW</span>
+            <div class="chart-toolbar" aria-label="测量频谱图控制">
+              <button type="button" data-measure-chart="spectrum" data-action="zoom-in">X+</button>
+              <button type="button" data-measure-chart="spectrum" data-action="zoom-out">X−</button>
+              <button type="button" data-measure-chart="spectrum" data-action="y-in">Y+</button>
+              <button type="button" data-measure-chart="spectrum" data-action="y-out">Y−</button>
+              <button type="button" data-measure-chart="spectrum" data-action="auto">自动</button>
+              <button type="button" data-measure-chart="spectrum" data-action="reset">复位</button>
+            </div>
+          </div>
+        </div>
+        <div class="chart-stage">
+          <canvas id="measureSpectrumCanvas" aria-label="频谱测量图" tabindex="0"></canvas>
+          <output id="spectrumCursor" class="chart-cursor">移动鼠标读取频率与幅度</output>
+        </div>
+        <div class="chart-footer">
+          <p class="chart-note">橙色线是峰值，青色区域是占用带宽边界。窗函数会影响泄漏，也会影响带宽估计。</p>
+          <output id="spectrumRange" class="range-readout"></output>
+        </div>
+      </section>
+
+      <div class="dual-chart-grid">
+        <section class="chart-card">
+          <div class="chart-heading">
+            <div>
+              <p class="chart-kicker">WATERFALL</p>
+              <h2>短时频谱瀑布图</h2>
+            </div>
+            <div class="chart-heading-side">
+              <div class="heat-legend"><span>弱</span><i></i><span>强</span></div>
+              <span class="chart-badge" id="waterfallBadge">STFT</span>
+            </div>
+          </div>
+          <div class="chart-stage">
+            <canvas id="measureWaterfallCanvas" aria-label="测量瀑布图" tabindex="0"></canvas>
+            <output id="waterfallCursor" class="chart-cursor">时间 / 频率</output>
+          </div>
+          <p class="chart-note">瀑布图适合判断信号是否跳频、扫频、断续发射，避免只看整段 FFT 时把时间信息压扁。</p>
+        </section>
+
+        <section class="chart-card">
+          <div class="chart-heading">
+            <div>
+              <p class="chart-kicker">REPORT</p>
+              <h2>测量报告</h2>
+            </div>
+            <span class="chart-badge" id="reportBadge">可复制</span>
+          </div>
+          <pre id="measurementReport" class="measurement-report"></pre>
+        </section>
+      </div>
+
+      <section class="lesson-card stage-lessons">
+        <div>
+          <p class="chart-kicker">GUIDED LABS</p>
+          <h2>第五阶段任务</h2>
+        </div>
+        <ol>
+          <li><button type="button" data-measure-preset="carrier">测中心频率</button><span>切到窄带 FM，观察峰值频率如何对应载波位置。</span></li>
+          <li><button type="button" data-measure-preset="obw">测占用带宽</button><span>改变占用功率百分比，理解 90% 与 99% OBW 的差别。</span></li>
+          <li><button type="button" data-measure-preset="duty">测突发占空比</button><span>切到 OOK 脉冲，调活动门限，观察占空比是否稳定。</span></li>
+          <li><button type="button" data-measure-preset="chirp">识别扫频信号</button><span>切到扫频雷达脉冲，用瀑布图判断它不是固定载波。</span></li>
+        </ol>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <span>RF DSP Lab · 阶段 5 / 6</span>
+    <div class="footer-links">
+      <a href="stage4.html">← 返回阶段 4</a>
+      <a href="roadmap.html">下一阶段：软件无线电实战 →</a>
+    </div>
+  </footer>
+  <script src="stage5.js"></script>
+</body>
+</html>

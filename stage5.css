@@ -1,0 +1,67 @@
+.file-drop {
+  padding: 12px;
+  border: 1px dashed rgba(183, 255, 60, 0.35);
+  background: rgba(183, 255, 60, 0.025);
+}
+
+.file-drop input {
+  width: 100%;
+  margin-top: 10px;
+  color: var(--muted);
+}
+
+.file-drop small {
+  display: block;
+  margin-top: 10px;
+  color: #71857e;
+  line-height: 1.5;
+}
+
+.measurement-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.measurement-flow span,
+.measurement-flow i {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  background: #09120f;
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 0.72rem;
+  font-style: normal;
+}
+
+.measurement-flow span {
+  color: var(--acid);
+}
+
+.measurement-flow i {
+  color: var(--muted);
+}
+
+.measurement-report {
+  min-height: 360px;
+  margin: 0;
+  padding: 16px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  color: var(--text);
+  background: #09120f;
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 0.76rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+#measureTimeCanvas,
+#measureSpectrumCanvas,
+#measureWaterfallCanvas {
+  touch-action: none;
+}

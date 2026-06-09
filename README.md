@@ -63,6 +63,16 @@
 - 接收机现象速查，帮助判断频偏、相偏、I/Q 失衡和 EVM 问题
 - 四个第四阶段引导实验
 
+### 阶段 5：信号测量与文件分析
+
+- 窄带 FM、OOK 脉冲、扫频雷达脉冲和复数 IQ / QPSK 模拟信号
+- WAV、CSV、TXT / IQ 文本导入
+- 峰值频率、占用带宽（OBW）、SNR、占空比和活动频率线索
+- 时域包络、频谱测量、短时频谱瀑布图和测量报告
+- 占用功率、活动门限、频谱窗、采样率和观测时长参数
+- 可复制的测量报告
+- 四个第五阶段引导实验
+
 ## 快速开始
 
 直接打开以下页面即可使用：
@@ -71,6 +81,7 @@
 - `stage2.html`：阶段 2
 - `stage3.html`：阶段 3
 - `stage4.html`：阶段 4
+- `stage5.html`：阶段 5
 - `roadmap.html`：完整学习路线
 
 也可以启动任意静态文件服务器：
@@ -100,7 +111,7 @@ npx serve .
 2. STFT、瀑布图、AM 与 FM 模拟调制
 3. ASK、FSK、BPSK 与 QPSK 数字调制
 4. IQ 信号、复数基带、下变频与 EVM
-5. IQ/WAV 文件导入与信号测量
+5. WAV、CSV、IQ 文件导入与信号测量
 6. 连接 SDR 硬件并完成接收链
 
 详细目标见 [LEARNING_PATH.md](LEARNING_PATH.md)。
@@ -123,6 +134,9 @@ rf-dsp-lab/
 ├── stage4.html
 ├── stage4.css
 ├── stage4.js
+├── stage5.html
+├── stage5.css
+├── stage5.js
 ├── styles.css
 ├── LEARNING_PATH.md
 ├── CHANGELOG.md
@@ -132,7 +146,7 @@ rf-dsp-lab/
 
 ## 当前版本
 
-`v0.4.0`：上线第四阶段 IQ 与复数基带实验室，新增下变频、复数轨迹、基带频谱、I/Q 失衡、频偏诊断和 EVM 指标。
+`v0.5.0`：上线第五阶段信号测量与文件分析实验室，新增 WAV/CSV/IQ 导入、峰值频率、OBW、SNR、占空比、瀑布图和测量报告。
 
 详细更新内容见 [CHANGELOG.md](CHANGELOG.md)。
 
