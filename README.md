@@ -53,6 +53,16 @@
 - 当前误码率、比特率、每码元比特数和频谱效率读数
 - 四个第三阶段引导实验
 
+### 阶段 4：IQ 与复数基带
+
+- QPSK、8PSK、16QAM 和复数单音
+- 射频载波、本振频偏、相位偏差、信噪比和符号率参数
+- I/Q 幅度失衡、正交误差和 DC 偏置
+- I/Q 时间序列、复数轨迹与星座、下变频后频谱
+- 自动采样率、复数带宽、残余频偏和 EVM 指标
+- 接收机现象速查，帮助判断频偏、相偏、I/Q 失衡和 EVM 问题
+- 四个第四阶段引导实验
+
 ## 快速开始
 
 直接打开以下页面即可使用：
@@ -60,6 +70,7 @@
 - `index.html`：阶段 1
 - `stage2.html`：阶段 2
 - `stage3.html`：阶段 3
+- `stage4.html`：阶段 4
 - `roadmap.html`：完整学习路线
 
 也可以启动任意静态文件服务器：
@@ -88,7 +99,7 @@ npx serve .
 1. 基础信号、采样、FFT、窗函数与滤波
 2. STFT、瀑布图、AM 与 FM 模拟调制
 3. ASK、FSK、BPSK 与 QPSK 数字调制
-4. IQ 信号、星座图、眼图与同步
+4. IQ 信号、复数基带、下变频与 EVM
 5. IQ/WAV 文件导入与信号测量
 6. 连接 SDR 硬件并完成接收链
 
@@ -109,6 +120,9 @@ rf-dsp-lab/
 ├── stage3.html
 ├── stage3.css
 ├── stage3.js
+├── stage4.html
+├── stage4.css
+├── stage4.js
 ├── styles.css
 ├── LEARNING_PATH.md
 ├── CHANGELOG.md
@@ -118,7 +132,7 @@ rf-dsp-lab/
 
 ## 当前版本
 
-`v0.3.0`：上线第三阶段数字调制实验室，新增 ASK/FSK/BPSK/QPSK、星座图、眼图、BER 曲线、信道噪声和判决对照。
+`v0.4.0`：上线第四阶段 IQ 与复数基带实验室，新增下变频、复数轨迹、基带频谱、I/Q 失衡、频偏诊断和 EVM 指标。
 
 详细更新内容见 [CHANGELOG.md](CHANGELOG.md)。
 

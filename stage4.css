@@ -1,0 +1,77 @@
+.receiver-chain {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.receiver-chain span,
+.receiver-chain i {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  background: #09120f;
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 0.72rem;
+  font-style: normal;
+}
+
+.receiver-chain span {
+  color: var(--acid);
+}
+
+.receiver-chain i {
+  color: var(--muted);
+}
+
+.iq-diagnosis-card {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 32px;
+}
+
+.iq-diagnosis {
+  display: grid;
+  gap: 10px;
+}
+
+.iq-diagnosis article {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.iq-diagnosis article:last-child {
+  border-bottom: 0;
+}
+
+.iq-diagnosis strong {
+  color: var(--text);
+}
+
+.iq-diagnosis span {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.iq-diagnosis .warning-text {
+  color: #ffd8d6 !important;
+}
+
+#iqWaveCanvas,
+#iqPlaneCanvas,
+#iqSpectrumCanvas {
+  touch-action: none;
+}
+
+@media (max-width: 680px) {
+  .iq-diagnosis-card,
+  .iq-diagnosis article {
+    grid-template-columns: 1fr;
+  }
+}

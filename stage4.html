@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="IQ 正交分量、复数基带、下变频、频偏、相偏、IQ 失衡和 EVM 的中文交互实验">
+  <title>阶段 4：IQ 与复数基带 | RF DSP Lab</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="stage2.css">
+  <link rel="stylesheet" href="stage3.css">
+  <link rel="stylesheet" href="stage4.css">
+</head>
+<body>
+  <nav class="top-nav">
+    <a class="brand" href="roadmap.html">RF DSP LAB</a>
+    <div>
+      <a href="index.html">阶段 1</a>
+      <a href="stage2.html">阶段 2</a>
+      <a href="stage3.html">阶段 3</a>
+      <a class="current" href="stage4.html">阶段 4</a>
+      <a href="roadmap.html">完整路线</a>
+    </div>
+  </nav>
+
+  <header class="stage-hero">
+    <div>
+      <p class="eyebrow">LEVEL 04 · IQ & COMPLEX BASEBAND</p>
+      <h1>把射频信号搬下来，<br><span>在复数平面里看清它。</span></h1>
+      <p class="intro">真实 SDR 接收机不会一直在高频上处理信号，而是用本振混频，把目标信号搬到基带。I 是同相分量，Q 是正交分量；它们合在一起，就能表示幅度、相位、频率偏移和星座质量。</p>
+    </div>
+    <a class="route-button ghost" href="roadmap.html">查看六阶段路线</a>
+  </header>
+
+  <main class="stage-layout">
+    <aside class="control-panel stage-controls">
+      <div class="panel-heading">
+        <span>阶段 4 控制台</span>
+        <button id="resetStage4" class="text-button" type="button">恢复默认</button>
+      </div>
+
+      <section class="control-section">
+        <div class="section-index">01</div>
+        <div class="control-content">
+          <h2>信号源</h2>
+          <label>
+            基带调制
+            <select id="iqMode">
+              <option value="qpsk" selected>QPSK</option>
+              <option value="psk8">8PSK</option>
+              <option value="qam16">16QAM</option>
+              <option value="tone">复数单音</option>
+            </select>
+          </label>
+          <label>
+            符号率 <output id="iqSymbolRateValue">2.00 kBd</output>
+            <span class="value-control">
+              <input id="iqSymbolRateInput" class="number-input" type="number" min="200" max="50000" step="100" value="2000" inputmode="numeric" aria-label="输入符号率">
+              <span>Bd</span>
+            </span>
+            <input id="iqSymbolRate" type="range" min="200" max="50000" step="100" value="2000">
+          </label>
+          <label>
+            每符号采样数
+            <select id="iqSamplesPerSymbol">
+              <option value="8">8</option>
+              <option value="16" selected>16</option>
+              <option value="32">32</option>
+              <option value="64">64</option>
+            </select>
+          </label>
+          <p id="sourceHint" class="control-hint"></p>
+        </div>
+      </section>
+
+      <section class="control-section">
+        <div class="section-index">02</div>
+        <div class="control-content">
+          <h2>射频与本振</h2>
+          <label>
+            射频载波 <output id="rfCarrierValue">24.00 kHz</output>
+            <span class="value-control">
+              <input id="rfCarrierInput" class="number-input" type="number" min="1000" max="180000" step="100" value="24000" inputmode="numeric" aria-label="输入射频载波">
+              <span>Hz</span>
+            </span>
+            <input id="rfCarrier" type="range" min="1000" max="180000" step="100" value="24000">
+          </label>
+          <label>
+            本振频偏 <output id="freqOffsetValue">320 Hz</output>
+            <span class="value-control">
+              <input id="freqOffsetInput" class="number-input" type="number" min="-5000" max="5000" step="10" value="320" inputmode="numeric" aria-label="输入本振频偏">
+              <span>Hz</span>
+            </span>
+            <input id="freqOffset" type="range" min="-5000" max="5000" step="10" value="320">
+          </label>
+          <label>
+            相位偏差 <output id="iqPhaseValue">18°</output>
+            <span class="value-control">
+              <input id="iqPhaseInput" class="number-input" type="number" min="-180" max="180" step="1" value="18" inputmode="numeric" aria-label="输入相位偏差">
+              <span>deg</span>
+            </span>
+            <input id="iqPhase" type="range" min="-180" max="180" step="1" value="18">
+          </label>
+        </div>
+      </section>
+
+      <section class="control-section">
+        <div class="section-index">03</div>
+        <div class="control-content">
+          <h2>接收机缺陷</h2>
+          <label>
+            I/Q 幅度失衡 <output id="gainImbalanceValue">8%</output>
+            <input id="gainImbalance" type="range" min="-30" max="30" step="1" value="8">
+          </label>
+          <label>
+            I/Q 正交误差 <output id="quadErrorValue">5°</output>
+            <input id="quadError" type="range" min="-25" max="25" step="1" value="5">
+          </label>
+          <label>
+            DC 偏置 <output id="dcOffsetValue">4%</output>
+            <input id="dcOffset" type="range" min="0" max="25" step="1" value="4">
+          </label>
+          <label>
+            信噪比 <output id="iqSnrValue">18 dB</output>
+            <span class="value-control">
+              <input id="iqSnrInput" class="number-input" type="number" min="-5" max="35" step="1" value="18" inputmode="numeric" aria-label="输入信噪比">
+              <span>dB</span>
+            </span>
+            <input id="iqSnr" type="range" min="-5" max="35" step="1" value="18">
+          </label>
+        </div>
+      </section>
+    </aside>
+
+    <div class="workspace">
+      <section class="concept-strip">
+        <article><small>自动采样率</small><strong id="iqSampleRateMetric">256 kSa/s</strong></article>
+        <article><small>复数带宽</small><strong id="basebandBwMetric">4.00 kHz</strong></article>
+        <article><small>残余频偏</small><strong id="residualMetric">320 Hz</strong></article>
+        <article><small>EVM</small><strong id="evmMetric">0.00%</strong></article>
+      </section>
+
+      <section class="chart-card explanation-card">
+        <div>
+          <p class="chart-kicker">RECEIVER IDEA</p>
+          <h2 id="iqLessonTitle">为什么要用 I/Q？</h2>
+        </div>
+        <div>
+          <p id="iqLessonText">单路实数信号只能看到投影，I/Q 两路则能保留相位方向。下变频后，星座是否旋转、偏心、拉伸，都能直接暴露接收机的问题。</p>
+          <div class="receiver-chain" aria-label="接收机处理链">
+            <span>RF</span><i>× LO</i><span>I/Q</span><i>LPF</i><span>Baseband</span><i>sync</i><span>Decision</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="chart-card">
+        <div class="chart-heading">
+          <div>
+            <p class="chart-kicker">I/Q TIME SERIES</p>
+            <h2>I 与 Q 随时间变化</h2>
+          </div>
+          <div class="chart-heading-side">
+            <div class="legend">
+              <span><i class="raw"></i><b>I 分量</b></span>
+              <span><i class="filtered"></i><b>Q 分量</b></span>
+            </div>
+            <span class="chart-badge" id="iqWaveBadge">显示 18 个符号</span>
+            <div class="chart-toolbar" aria-label="IQ 时间图控制">
+              <button type="button" data-iq-chart="wave" data-action="zoom-in">X+</button>
+              <button type="button" data-iq-chart="wave" data-action="zoom-out">X−</button>
+              <button type="button" data-iq-chart="wave" data-action="y-in">Y+</button>
+              <button type="button" data-iq-chart="wave" data-action="y-out">Y−</button>
+              <button type="button" data-iq-chart="wave" data-action="auto">自动</button>
+              <button type="button" data-iq-chart="wave" data-action="reset">复位</button>
+            </div>
+          </div>
+        </div>
+        <div class="chart-stage">
+          <canvas id="iqWaveCanvas" aria-label="I 与 Q 时间序列" tabindex="0"></canvas>
+          <output id="iqWaveCursor" class="chart-cursor">拖拽平移 · 滚轮缩放 X · Shift + 滚轮缩放 Y</output>
+        </div>
+        <div class="chart-footer">
+          <p class="chart-note" id="iqWaveNote">QPSK 中，I/Q 两路分别承载符号在复数平面上的横向和纵向坐标。</p>
+          <output id="iqWaveRange" class="range-readout"></output>
+        </div>
+      </section>
+
+      <div class="dual-chart-grid">
+        <section class="chart-card">
+          <div class="chart-heading">
+            <div>
+              <p class="chart-kicker">COMPLEX PLANE</p>
+              <h2>复数轨迹与星座</h2>
+            </div>
+            <div class="chart-heading-side">
+              <span class="chart-badge" id="iqPlaneBadge">96 个接收采样</span>
+              <div class="chart-toolbar" aria-label="复数平面控制">
+                <button type="button" data-iq-chart="plane" data-action="zoom-in">+</button>
+                <button type="button" data-iq-chart="plane" data-action="zoom-out">−</button>
+                <button type="button" data-iq-chart="plane" data-action="auto">自动</button>
+                <button type="button" data-iq-chart="plane" data-action="reset">复位</button>
+              </div>
+            </div>
+          </div>
+          <div class="chart-stage">
+            <canvas id="iqPlaneCanvas" aria-label="复数平面和星座图" tabindex="0"></canvas>
+            <output id="iqPlaneCursor" class="chart-cursor">I 0.00 | Q 0.00</output>
+          </div>
+          <p class="chart-note">频偏会让星座缓慢旋转；相偏会让星座整体转动；IQ 失衡会把圆形轨迹挤压成椭圆。</p>
+        </section>
+
+        <section class="chart-card">
+          <div class="chart-heading">
+            <div>
+              <p class="chart-kicker">BASEBAND SPECTRUM</p>
+              <h2>下变频后的频谱</h2>
+            </div>
+            <div class="chart-heading-side">
+              <span class="chart-badge" id="iqSpectrumBadge">中心 0 Hz</span>
+              <div class="chart-toolbar" aria-label="基带频谱控制">
+                <button type="button" data-iq-chart="spectrum" data-action="zoom-in">X+</button>
+                <button type="button" data-iq-chart="spectrum" data-action="zoom-out">X−</button>
+                <button type="button" data-iq-chart="spectrum" data-action="y-in">Y+</button>
+                <button type="button" data-iq-chart="spectrum" data-action="y-out">Y−</button>
+                <button type="button" data-iq-chart="spectrum" data-action="auto">自动</button>
+                <button type="button" data-iq-chart="spectrum" data-action="reset">复位</button>
+              </div>
+            </div>
+          </div>
+          <div class="chart-stage">
+            <canvas id="iqSpectrumCanvas" aria-label="复数基带频谱" tabindex="0"></canvas>
+            <output id="iqSpectrumCursor" class="chart-cursor">移动鼠标读取频率与幅度</output>
+          </div>
+          <p class="chart-note">理想下变频后，目标信号应落在 0 Hz 附近；本振频偏会把整个基带频谱推离中心。</p>
+        </section>
+      </div>
+
+      <section class="chart-card iq-diagnosis-card">
+        <div>
+          <p class="chart-kicker">DIAGNOSIS</p>
+          <h2>接收机现象速查</h2>
+        </div>
+        <div id="iqDiagnosis" class="iq-diagnosis"></div>
+      </section>
+
+      <section class="lesson-card stage-lessons">
+        <div>
+          <p class="chart-kicker">GUIDED LABS</p>
+          <h2>第四阶段任务</h2>
+        </div>
+        <ol>
+          <li><button type="button" data-iq-preset="downconvert">观察下变频</button><span>把本振频偏调到 0，观察星座不再持续旋转，频谱回到 0 Hz 附近。</span></li>
+          <li><button type="button" data-iq-preset="offset">制造频偏</button><span>加入 1.2 kHz 频偏，观察复数轨迹变成转动的圆环或螺旋。</span></li>
+          <li><button type="button" data-iq-preset="imbalance">拉坏 I/Q 正交性</button><span>提高幅度失衡和正交误差，观察星座被拉伸、镜像泄漏增强。</span></li>
+          <li><button type="button" data-iq-preset="qam">切到 16QAM</button><span>体验高阶调制对噪声和 EVM 更敏感，为后续测量阶段做准备。</span></li>
+        </ol>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <span>RF DSP Lab · 阶段 4 / 6</span>
+    <div class="footer-links">
+      <a href="stage3.html">← 返回阶段 3</a>
+      <a href="roadmap.html">下一阶段：信号测量与文件分析 →</a>
+    </div>
+  </footer>
+  <script src="stage4.js"></script>
+</body>
+</html>
