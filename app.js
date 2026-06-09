@@ -1,16 +1,26 @@
 "use strict";
 
-const FFT_SIZE = 1024;
+const FFT_SIZE = 4096;
+const MAX_FREQUENCY = 20000;
+const SAMPLE_RATES = [500, 1000, 2000, 4000, 8000, 16000, 32000, 44100, 48000, 96000];
 const controls = {
   waveform: document.querySelector("#waveform"),
   frequency: document.querySelector("#frequency"),
+  frequencyInput: document.querySelector("#frequencyInput"),
   secondFrequency: document.querySelector("#secondFrequency"),
+  secondFrequencyInput: document.querySelector("#secondFrequencyInput"),
   secondAmplitude: document.querySelector("#secondAmplitude"),
   noise: document.querySelector("#noise"),
   sampleRate: document.querySelector("#sampleRate"),
   windowType: document.querySelector("#windowType"),
   filterType: document.querySelector("#filterType"),
-  cutoff: document.querySelector("#cutoff")
+  filterMode: document.querySelector("#filterMode"),
+  cutoff: document.querySelector("#cutoff"),
+  cutoffInput: document.querySelector("#cutoffInput"),
+  filterQ: document.querySelector("#filterQ"),
+  filterOrder: document.querySelector("#filterOrder"),
+  firTaps: document.querySelector("#firTaps"),
+  firWindow: document.querySelector("#firWindow")
 };
 
 const outputs = {
@@ -19,6 +29,9 @@ const outputs = {
   secondAmplitude: document.querySelector("#secondAmplitudeValue"),
   noise: document.querySelector("#noiseValue"),
   cutoff: document.querySelector("#cutoffValue"),
+  filterQ: document.querySelector("#filterQValue"),
+  firTaps: document.querySelector("#firTapsValue"),
+  sampleRate: document.querySelector("#sampleRateValue"),
   sampleInterval: document.querySelector("#sampleInterval"),
   nyquist: document.querySelector("#nyquist"),
   resolution: document.querySelector("#resolution"),
@@ -28,6 +41,19 @@ const outputs = {
 const timeCanvas = document.querySelector("#timeCanvas");
 const spectrumCanvas = document.querySelector("#spectrumCanvas");
 const warning = document.querySelector("#warning");
+const secondSignalState = document.querySelector("#secondSignalState");
+const filterHint = document.querySelector("#filterHint");
+const filterParameterGroups = {
+  mode: document.querySelector("#filterModeGroup"),
+  cutoff: document.querySelector("#cutoffGroup"),
+  biquad: document.querySelector("#biquadParameters"),
+  butterworth: document.querySelector("#butterworthParameters"),
+  fir: document.querySelector("#firParameters")
+};
+const filteredLegends = [
+  document.querySelector("#timeFilteredLegend"),
+  document.querySelector("#spectrumFilteredLegend")
+];
 const chartOutputs = {
   timeCursor: document.querySelector("#timeCursor"),
   spectrumCursor: document.querySelector("#spectrumCursor"),
@@ -36,12 +62,49 @@ const chartOutputs = {
 };
 
 const chartViews = {
-  time: { xMin: 0, xMax: 0.1, yMin: -2, yMax: 2, autoY: true, xAuto: false, cursor: null },
+  time: { xMin: 0, xMax: 0.1, yMin: -2.2, yMax: 2.2, autoY: false, xAuto: false, followSignal: true, cursor: null },
   spectrum: { xMin: 0, xMax: 500, yMin: -80, yMax: 0, autoY: true, xAuto: true, cursor: null }
 };
 
 let latestData = null;
 const plotPadding = { left: 58, right: 20, top: 18, bottom: 38 };
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function formatHertz(value) {
+  if (value < 1) return `${value.toFixed(2)} Hz`;
+  if (value < 10) return `${value.toFixed(2)} Hz`;
+  if (value >= 1000) {
+    const digits = value % 1000 === 0 ? 0 : 1;
+    return `${(value / 1000).toFixed(digits)} kHz`;
+  }
+  return `${Math.round(value)} Hz`;
+}
+
+function resolveSampleRate() {
+  if (controls.sampleRate.value !== "auto") return Number(controls.sampleRate.value);
+  const activeFrequencies = [
+    Number(controls.frequency.value),
+    Number(controls.secondAmplitude.value) > 0 ? Number(controls.secondFrequency.value) : 0,
+    controls.filterType.value !== "none" ? Number(controls.cutoff.value) : 0
+  ];
+  const requiredRate = Math.max(1, ...activeFrequencies) * 4;
+  return SAMPLE_RATES.find(rate => rate >= requiredRate) || SAMPLE_RATES[SAMPLE_RATES.length - 1];
+}
+
+function syncFrequencyPair(range, input, renderAfter = true) {
+  const value = clamp(Math.round(Number(input.value) || 0), Number(range.min), Number(range.max));
+  range.value = String(value);
+  input.value = String(value);
+  if (renderAfter) render();
+}
+
+function syncRangePair(range, input) {
+  input.value = range.value;
+  render();
+}
 
 function pseudoNoise(index) {
   const value = Math.sin(index * 12.9898 + 78.233) * 43758.5453;
@@ -89,13 +152,116 @@ function highPass(signal, cutoff, sampleRate) {
   return result;
 }
 
-function filterSignal(signal, sampleRate) {
-  const cutoff = Number(controls.cutoff.value);
-  if (controls.filterType.value === "lowpass") {
-    return lowPass(signal, cutoff, sampleRate);
+function makeBiquadCoefficients(mode, cutoff, sampleRate, q) {
+  const omega = 2 * Math.PI * cutoff / sampleRate;
+  const cosine = Math.cos(omega);
+  const sine = Math.sin(omega);
+  const alpha = sine / (2 * q);
+  let b0;
+  let b1;
+  let b2;
+  if (mode === "highpass") {
+    b0 = (1 + cosine) / 2;
+    b1 = -(1 + cosine);
+    b2 = (1 + cosine) / 2;
+  } else {
+    b0 = (1 - cosine) / 2;
+    b1 = 1 - cosine;
+    b2 = (1 - cosine) / 2;
   }
-  if (controls.filterType.value === "highpass") {
-    return highPass(signal, cutoff, sampleRate);
+  const a0 = 1 + alpha;
+  return {
+    b0: b0 / a0,
+    b1: b1 / a0,
+    b2: b2 / a0,
+    a1: (-2 * cosine) / a0,
+    a2: (1 - alpha) / a0
+  };
+}
+
+function applyBiquad(signal, coefficients) {
+  const result = new Array(signal.length);
+  let z1 = 0;
+  let z2 = 0;
+  for (let index = 0; index < signal.length; index += 1) {
+    const input = signal[index];
+    const output = coefficients.b0 * input + z1;
+    z1 = coefficients.b1 * input - coefficients.a1 * output + z2;
+    z2 = coefficients.b2 * input - coefficients.a2 * output;
+    result[index] = output;
+  }
+  return result;
+}
+
+function butterworthFilter(signal, mode, cutoff, sampleRate, order) {
+  let result = signal.slice();
+  const sections = order / 2;
+  for (let section = 1; section <= sections; section += 1) {
+    const q = 1 / (2 * Math.sin((2 * section - 1) * Math.PI / (2 * order)));
+    result = applyBiquad(result, makeBiquadCoefficients(mode, cutoff, sampleRate, q));
+  }
+  return result;
+}
+
+function sinc(value) {
+  return Math.abs(value) < 1e-12 ? 1 : Math.sin(Math.PI * value) / (Math.PI * value);
+}
+
+function firWindowCoefficient(type, index, size) {
+  return windowCoefficient(type, index, size);
+}
+
+function designFir(mode, cutoff, sampleRate, taps, windowType) {
+  const middle = (taps - 1) / 2;
+  const normalizedCutoff = cutoff / sampleRate;
+  const coefficients = Array.from({ length: taps }, (_, index) => {
+    const offset = index - middle;
+    const lowpass = 2 * normalizedCutoff * sinc(2 * normalizedCutoff * offset);
+    const ideal = mode === "highpass"
+      ? (index === middle ? 1 : 0) - lowpass
+      : lowpass;
+    return ideal * firWindowCoefficient(windowType, index, taps);
+  });
+  const gain = mode === "highpass"
+    ? coefficients.reduce((sum, value, index) => sum + value * (index % 2 === 0 ? 1 : -1), 0)
+    : coefficients.reduce((sum, value) => sum + value, 0);
+  return coefficients.map(value => value / Math.abs(gain || 1));
+}
+
+function applyFir(signal, coefficients) {
+  const result = new Array(signal.length).fill(0);
+  for (let index = 0; index < signal.length; index += 1) {
+    let sum = 0;
+    const coefficientLimit = Math.min(coefficients.length - 1, index);
+    for (let tap = 0; tap <= coefficientLimit; tap += 1) {
+      sum += coefficients[tap] * signal[index - tap];
+    }
+    result[index] = sum;
+  }
+  return result;
+}
+
+function filterSignal(signal, sampleRate) {
+  const type = controls.filterType.value;
+  if (type === "none") return signal.slice();
+  const mode = controls.filterMode.value;
+  const cutoff = Number(controls.cutoff.value);
+  if (type === "rc") {
+    return mode === "highpass"
+      ? highPass(signal, cutoff, sampleRate)
+      : lowPass(signal, cutoff, sampleRate);
+  }
+  if (type === "biquad") {
+    const coefficients = makeBiquadCoefficients(mode, cutoff, sampleRate, Number(controls.filterQ.value));
+    return applyBiquad(signal, coefficients);
+  }
+  if (type === "butterworth") {
+    return butterworthFilter(signal, mode, cutoff, sampleRate, Number(controls.filterOrder.value));
+  }
+  if (type === "fir") {
+    const taps = Number(controls.firTaps.value);
+    const coefficients = designFir(mode, cutoff, sampleRate, taps, controls.firWindow.value);
+    return applyFir(signal, coefficients);
   }
   return signal.slice();
 }
@@ -184,8 +350,7 @@ function formatTime(value) {
 }
 
 function formatFrequency(value) {
-  if (value >= 1000) return `${Number((value / 1000).toPrecision(3))} kHz`;
-  return `${Math.round(value)} Hz`;
+  return formatHertz(value);
 }
 
 function formatAmplitude(value) {
@@ -314,7 +479,12 @@ function drawCrosshair(context, width, height, view, cursor) {
 function drawTime(signal, filtered, sampleRate) {
   const view = chartViews.time;
   const totalDuration = (signal.length - 1) / sampleRate;
-  if (view.xAuto) {
+  if (view.followSignal) {
+    const frequency = Math.max(1, Number(controls.frequency.value));
+    const cycleWindow = Math.max(32 / sampleRate, 8 / frequency);
+    view.xMin = 0;
+    view.xMax = Math.min(totalDuration, 0.1, cycleWindow);
+  } else if (view.xAuto) {
     view.xMin = 0;
     view.xMax = totalDuration;
   } else {
@@ -397,6 +567,7 @@ function renderCharts() {
 function zoomView(kind, axis, factor, anchorRatio = 0.5) {
   const view = chartViews[kind];
   if (axis === "x") {
+    if (kind === "time") view.followSignal = false;
     const bounds = dataBounds(kind);
     const span = view.xMax - view.xMin;
     const nextSpan = Math.min(bounds.xMax - bounds.xMin, Math.max(bounds.minSpan, span * factor));
@@ -418,15 +589,20 @@ function zoomView(kind, axis, factor, anchorRatio = 0.5) {
   renderCharts();
 }
 
-function resetView(kind, fitAll = false) {
+function resetView(kind, fitAll = false, autoY = fitAll) {
   const view = chartViews[kind];
   view.cursor = null;
-  view.autoY = true;
+  view.autoY = autoY;
   if (kind === "time") {
     const bounds = dataBounds(kind);
     view.xMin = 0;
     view.xMax = fitAll ? bounds.xMax : Math.min(0.1, bounds.xMax);
     view.xAuto = fitAll;
+    view.followSignal = !fitAll;
+    if (!autoY) {
+      view.yMin = -2.2;
+      view.yMax = 2.2;
+    }
   } else {
     view.xMin = 0;
     view.xMax = dataBounds(kind).xMax;
@@ -485,6 +661,7 @@ function attachChartInteractions(kind, canvas, cursorOutput) {
       view.yMin = drag.yMin + deltaY;
       view.yMax = drag.yMax + deltaY;
       view.xAuto = false;
+      if (kind === "time") view.followSignal = false;
       view.autoY = false;
       const bounds = dataBounds(kind);
       constrainX(view, bounds.xMin, bounds.xMax);
@@ -529,37 +706,93 @@ function attachChartInteractions(kind, canvas, cursorOutput) {
     zoomView(kind, event.shiftKey ? "y" : "x", factor, event.shiftKey ? point.yRatio : point.xRatio);
   }, { passive: false });
 
-  canvas.addEventListener("dblclick", () => resetView(kind, false));
+  canvas.addEventListener("dblclick", () => resetView(kind, false, kind === "spectrum"));
+}
+
+function filterDescription() {
+  const type = controls.filterType.value;
+  const modeName = controls.filterMode.value === "highpass" ? "高通" : "低通";
+  if (type === "none") return "关闭";
+  if (type === "rc") return `RC 一阶 IIR · ${modeName}`;
+  if (type === "biquad") return `双二阶 IIR · Q ${Number(controls.filterQ.value).toFixed(2)} · ${modeName}`;
+  if (type === "butterworth") return `Butterworth ${controls.filterOrder.value} 阶 · ${modeName}`;
+  const windowNames = { rect: "矩形窗", hann: "Hann", hamming: "Hamming", blackman: "Blackman" };
+  return `FIR ${controls.firTaps.value} taps · ${windowNames[controls.firWindow.value]} · ${modeName}`;
+}
+
+function updateFilterControls() {
+  const type = controls.filterType.value;
+  const enabled = type !== "none";
+  filterParameterGroups.mode.hidden = !enabled;
+  filterParameterGroups.cutoff.classList.toggle("is-disabled", !enabled);
+  controls.cutoff.disabled = !enabled;
+  controls.cutoffInput.disabled = !enabled;
+  controls.cutoffInput.closest(".value-control").classList.toggle("is-disabled", !enabled);
+  filterParameterGroups.biquad.hidden = type !== "biquad";
+  filterParameterGroups.butterworth.hidden = type !== "butterworth";
+  filterParameterGroups.fir.hidden = type !== "fir";
+  outputs.filterQ.value = Number(controls.filterQ.value).toFixed(3);
+  outputs.firTaps.value = `${controls.firTaps.value} taps`;
+
+  const hints = {
+    none: "滤波器已关闭：图中只显示一条合成输入曲线。",
+    rc: "RC 一阶 IIR：计算简单、过渡缓慢，适合观察基础低通和高通行为。",
+    biquad: "双二阶 IIR：Q 越高，截止频率附近越容易出现峰化；Q=0.707 接近二阶 Butterworth。",
+    butterworth: "Butterworth IIR：通带平坦；阶数越高，截止频率之后的滚降越陡。",
+    fir: "窗函数 FIR：近似线性相位；抽头越多，过渡带越窄，但计算量和时间延迟越大。"
+  };
+  filterHint.textContent = hints[type];
 }
 
 function updateReadouts(sampleRate) {
   const cutoff = Number(controls.cutoff.value);
-  outputs.frequency.value = `${controls.frequency.value} Hz`;
-  outputs.secondFrequency.value = `${controls.secondFrequency.value} Hz`;
+  const secondSignalEnabled = Number(controls.secondAmplitude.value) > 0;
+  outputs.frequency.value = formatHertz(Number(controls.frequency.value));
+  outputs.secondFrequency.value = secondSignalEnabled
+    ? formatHertz(Number(controls.secondFrequency.value))
+    : "已关闭";
   outputs.secondAmplitude.value = `${controls.secondAmplitude.value}%`;
   outputs.noise.value = `${controls.noise.value}%`;
-  outputs.cutoff.value = `${cutoff} Hz`;
-  outputs.sampleInterval.textContent = `${(1000 / sampleRate).toFixed(2)} ms`;
-  outputs.nyquist.textContent = `${sampleRate / 2} Hz`;
-  outputs.resolution.textContent = `${(sampleRate / FFT_SIZE).toFixed(2)} Hz`;
-  const names = { none: "关闭", lowpass: "低通", highpass: "高通" };
+  outputs.cutoff.value = formatHertz(cutoff);
+  outputs.sampleRate.value = controls.sampleRate.value === "auto"
+    ? `自动 · ${formatHertz(sampleRate)}`
+    : formatHertz(sampleRate);
+  const intervalSeconds = 1 / sampleRate;
+  outputs.sampleInterval.textContent = intervalSeconds < 0.001
+    ? `${(intervalSeconds * 1e6).toFixed(1)} μs`
+    : `${(intervalSeconds * 1000).toFixed(2)} ms`;
+  outputs.nyquist.textContent = formatHertz(sampleRate / 2);
+  outputs.resolution.textContent = formatHertz(sampleRate / FFT_SIZE);
+  updateFilterControls();
   outputs.filterStatus.textContent = controls.filterType.value === "none"
-    ? names.none
-    : `${names[controls.filterType.value]} · ${cutoff} Hz`;
+    ? "关闭"
+    : `${filterDescription()} · ${formatHertz(cutoff)}`;
+  const filterEnabled = controls.filterType.value !== "none";
+  filteredLegends.forEach(legend => legend.classList.toggle("is-hidden", !filterEnabled));
+
+  controls.secondFrequency.disabled = !secondSignalEnabled;
+  controls.secondFrequencyInput.disabled = !secondSignalEnabled;
+  controls.secondFrequencyInput.closest(".value-control").classList.toggle("is-disabled", !secondSignalEnabled);
+  secondSignalState.textContent = secondSignalEnabled ? "已启用" : "已关闭（幅度为 0%）";
+  secondSignalState.classList.toggle("is-off", !secondSignalEnabled);
 
   const activeFrequencies = [
     Number(controls.frequency.value),
-    Number(controls.secondAmplitude.value) > 0 ? Number(controls.secondFrequency.value) : 0
+    secondSignalEnabled ? Number(controls.secondFrequency.value) : 0
   ];
   warning.hidden = Math.max(...activeFrequencies) < sampleRate / 2;
-  controls.cutoff.max = String(Math.max(10, sampleRate / 2 - 5));
-  if (Number(controls.cutoff.value) > Number(controls.cutoff.max)) {
-    controls.cutoff.value = controls.cutoff.max;
-  }
 }
 
 function render() {
-  const sampleRate = Number(controls.sampleRate.value);
+  let sampleRate = resolveSampleRate();
+  const cutoffLimit = Math.min(MAX_FREQUENCY, Math.max(1, Math.floor(sampleRate / 2 - 1)));
+  controls.cutoff.max = String(cutoffLimit);
+  controls.cutoffInput.max = String(cutoffLimit);
+  if (Number(controls.cutoff.value) > cutoffLimit) {
+    controls.cutoff.value = String(cutoffLimit);
+    sampleRate = resolveSampleRate();
+  }
+  controls.cutoffInput.value = controls.cutoff.value;
   updateReadouts(sampleRate);
   const signal = makeSignal(sampleRate);
   const filtered = filterSignal(signal, sampleRate);
@@ -575,22 +808,54 @@ const defaults = {
   secondFrequency: "120",
   secondAmplitude: "35",
   noise: "8",
-  sampleRate: "1000",
+  sampleRate: "auto",
   windowType: "hann",
-  filterType: "lowpass",
-  cutoff: "80"
+  filterType: "butterworth",
+  filterMode: "lowpass",
+  cutoff: "80",
+  filterQ: "0.707",
+  filterOrder: "4",
+  firTaps: "101",
+  firWindow: "hamming"
 };
 
 function applyValues(values) {
   Object.entries(values).forEach(([key, value]) => {
     controls[key].value = value;
+    if (controls[`${key}Input`]) controls[`${key}Input`].value = value;
   });
   render();
 }
 
-Object.values(controls).forEach(control => {
+[
+  "waveform",
+  "secondAmplitude",
+  "noise",
+  "sampleRate",
+  "windowType",
+  "filterType",
+  "filterMode",
+  "filterQ",
+  "filterOrder",
+  "firTaps",
+  "firWindow"
+].forEach(key => {
+  const control = controls[key];
   control.addEventListener("input", render);
   control.addEventListener("change", render);
+});
+
+[
+  [controls.frequency, controls.frequencyInput],
+  [controls.secondFrequency, controls.secondFrequencyInput],
+  [controls.cutoff, controls.cutoffInput]
+].forEach(([range, input]) => {
+  range.addEventListener("input", () => syncRangePair(range, input));
+  input.addEventListener("input", () => {
+    if (input.value === "") return;
+    syncFrequencyPair(range, input);
+  });
+  input.addEventListener("change", () => syncFrequencyPair(range, input));
 });
 
 document.querySelector("#resetButton").addEventListener("click", () => applyValues(defaults));
@@ -603,7 +868,17 @@ document.querySelectorAll("[data-preset]").forEach(button => {
     } else if (preset === "window") {
       applyValues({ sampleRate: "1000", frequency: "53", secondAmplitude: "0", noise: "0", windowType: "rect", filterType: "none" });
     } else if (preset === "filter") {
-      applyValues({ sampleRate: "1000", frequency: "50", secondFrequency: "120", secondAmplitude: "70", windowType: "hann", filterType: "lowpass", cutoff: "80" });
+      applyValues({
+        sampleRate: "1000",
+        frequency: "50",
+        secondFrequency: "120",
+        secondAmplitude: "70",
+        windowType: "hann",
+        filterType: "butterworth",
+        filterMode: "lowpass",
+        filterOrder: "4",
+        cutoff: "80"
+      });
     } else if (preset === "alias") {
       applyValues({ sampleRate: "500", frequency: "350", secondAmplitude: "0", noise: "0", windowType: "hann", filterType: "none" });
     }
@@ -618,8 +893,8 @@ document.querySelectorAll(".chart-toolbar button").forEach(button => {
     if (action === "zoom-out") zoomView(kind, "x", 1.5);
     if (action === "y-in") zoomView(kind, "y", 0.65);
     if (action === "y-out") zoomView(kind, "y", 1.5);
-    if (action === "auto") resetView(kind, true);
-    if (action === "reset") resetView(kind, false);
+    if (action === "auto") resetView(kind, true, true);
+    if (action === "reset") resetView(kind, false, kind === "spectrum");
   });
 });
 

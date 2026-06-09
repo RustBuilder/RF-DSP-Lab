@@ -170,6 +170,74 @@ label output {
   font-family: "Cascadia Code", Consolas, monospace;
 }
 
+.value-control {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding-right: 10px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: #08110f;
+  font-family: "Cascadia Code", Consolas, monospace;
+}
+
+.number-input {
+  min-width: 0;
+  width: 100%;
+  padding: 9px 10px;
+  border: 0;
+  color: var(--text);
+  background: transparent;
+  outline: none;
+  font-family: "Cascadia Code", Consolas, monospace;
+}
+
+.value-control:focus-within {
+  border-color: var(--acid);
+}
+
+.control-hint {
+  margin: 10px 0 0;
+  color: #71857e;
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+.filter-parameters {
+  margin-top: 14px;
+  padding: 2px 12px 14px;
+  border-left: 2px solid rgba(183, 255, 60, 0.28);
+  background: rgba(183, 255, 60, 0.025);
+}
+
+.filter-parameters[hidden] {
+  display: none;
+}
+
+.signal-state {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 3px 7px;
+  border: 1px solid rgba(183, 255, 60, 0.35);
+  color: var(--acid);
+  font-size: 0.68rem;
+}
+
+.signal-state.is-off {
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+.value-control.is-disabled {
+  opacity: 0.45;
+}
+
+input:disabled {
+  cursor: not-allowed;
+}
+
 select {
   width: 100%;
   margin-top: 8px;
@@ -220,9 +288,16 @@ input[type="range"] {
 }
 
 .metrics strong {
+  display: block;
   color: var(--acid);
   font-family: "Cascadia Code", Consolas, monospace;
   font-size: 1rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+label.is-disabled {
+  opacity: 0.5;
 }
 
 .chart-card,
@@ -292,6 +367,10 @@ input[type="range"] {
   height: 2px;
   margin-right: 7px;
   vertical-align: middle;
+}
+
+.legend .is-hidden {
+  display: none;
 }
 
 .legend .raw {

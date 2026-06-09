@@ -43,16 +43,26 @@
           </label>
           <label>
             主频率 <output id="frequencyValue">50 Hz</output>
-            <input id="frequency" type="range" min="10" max="450" step="5" value="50">
+            <span class="value-control">
+              <input id="frequencyInput" class="number-input" type="number" min="1" max="20000" step="1" value="50" inputmode="numeric" aria-label="输入主频率">
+              <span>Hz</span>
+            </span>
+            <input id="frequency" type="range" min="1" max="20000" step="1" value="50">
           </label>
           <label>
             第二信号 <output id="secondFrequencyValue">120 Hz</output>
-            <input id="secondFrequency" type="range" min="0" max="450" step="5" value="120">
+            <span id="secondSignalState" class="signal-state">已启用</span>
+            <span class="value-control">
+              <input id="secondFrequencyInput" class="number-input" type="number" min="0" max="20000" step="1" value="120" inputmode="numeric" aria-label="输入第二信号频率">
+              <span>Hz</span>
+            </span>
+            <input id="secondFrequency" type="range" min="0" max="20000" step="1" value="120">
           </label>
           <label>
             第二信号幅度 <output id="secondAmplitudeValue">35%</output>
             <input id="secondAmplitude" type="range" min="0" max="100" step="5" value="35">
           </label>
+          <p class="control-hint">第二信号会与主信号相加，不会单独显示为一条曲线。同频、同相时主要表现为合成幅度增大。</p>
           <label>
             噪声 <output id="noiseValue">8%</output>
             <input id="noise" type="range" min="0" max="60" step="2" value="8">
@@ -65,14 +75,22 @@
         <div class="control-content">
           <h2>采样与观察</h2>
           <label>
-            采样率
+            采样率 <output id="sampleRateValue">自动 · 1 kHz</output>
             <select id="sampleRate">
+              <option value="auto" selected>自动选择（推荐）</option>
               <option value="500">500 Hz</option>
-              <option value="1000" selected>1,000 Hz</option>
+              <option value="1000">1,000 Hz</option>
               <option value="2000">2,000 Hz</option>
               <option value="4000">4,000 Hz</option>
+              <option value="8000">8,000 Hz</option>
+              <option value="16000">16,000 Hz</option>
+              <option value="32000">32,000 Hz</option>
+              <option value="44100">44,100 Hz</option>
+              <option value="48000">48,000 Hz</option>
+              <option value="96000">96,000 Hz</option>
             </select>
           </label>
+          <p class="control-hint">自动模式会根据当前信号频率选择采样率；手动模式可用于混叠实验。</p>
           <label>
             窗函数
             <select id="windowType">
@@ -90,17 +108,63 @@
         <div class="control-content">
           <h2>滤波器</h2>
           <label>
-            类型
+            算法
             <select id="filterType">
               <option value="none">关闭</option>
-              <option value="lowpass" selected>低通滤波</option>
-              <option value="highpass">高通滤波</option>
+              <option value="rc">RC 一阶 IIR</option>
+              <option value="biquad">双二阶 IIR（可调 Q）</option>
+              <option value="butterworth" selected>Butterworth IIR</option>
+              <option value="fir">窗函数 FIR</option>
             </select>
           </label>
-          <label>
-            截止频率 <output id="cutoffValue">80 Hz</output>
-            <input id="cutoff" type="range" min="10" max="450" step="5" value="80">
+          <label id="filterModeGroup">
+            响应类型
+            <select id="filterMode">
+              <option value="lowpass" selected>低通</option>
+              <option value="highpass">高通</option>
+            </select>
           </label>
+          <label id="cutoffGroup">
+            截止频率 <output id="cutoffValue">80 Hz</output>
+            <span class="value-control">
+              <input id="cutoffInput" class="number-input" type="number" min="1" max="20000" step="1" value="80" inputmode="numeric" aria-label="输入滤波器截止频率">
+              <span>Hz</span>
+            </span>
+            <input id="cutoff" type="range" min="1" max="20000" step="1" value="80">
+          </label>
+          <div id="biquadParameters" class="filter-parameters" hidden>
+            <label>
+              Q 值 <output id="filterQValue">0.707</output>
+              <input id="filterQ" type="range" min="0.2" max="5" step="0.01" value="0.707">
+            </label>
+          </div>
+          <div id="butterworthParameters" class="filter-parameters">
+            <label>
+              阶数
+              <select id="filterOrder">
+                <option value="2">2 阶</option>
+                <option value="4" selected>4 阶</option>
+                <option value="6">6 阶</option>
+                <option value="8">8 阶</option>
+              </select>
+            </label>
+          </div>
+          <div id="firParameters" class="filter-parameters" hidden>
+            <label>
+              FIR 抽头数 <output id="firTapsValue">101 taps</output>
+              <input id="firTaps" type="range" min="11" max="401" step="2" value="101">
+            </label>
+            <label>
+              FIR 窗函数
+              <select id="firWindow">
+                <option value="rect">矩形窗</option>
+                <option value="hann">Hann 窗</option>
+                <option value="hamming" selected>Hamming 窗</option>
+                <option value="blackman">Blackman 窗</option>
+              </select>
+            </label>
+          </div>
+          <p id="filterHint" class="control-hint">Butterworth 通带平坦；提高阶数可增强 120 Hz 的抑制。</p>
         </div>
       </section>
     </aside>
@@ -126,7 +190,7 @@
         </article>
         <article>
           <small>滤波状态</small>
-          <strong id="filterStatus">低通 · 80 Hz</strong>
+          <strong id="filterStatus">Butterworth 4 阶 · 低通 · 80 Hz</strong>
         </article>
       </section>
 
@@ -138,8 +202,8 @@
           </div>
           <div class="chart-heading-side">
             <div class="legend">
-              <span><i class="raw"></i>原始信号</span>
-              <span><i class="filtered"></i>滤波后</span>
+              <span><i class="raw"></i>合成输入</span>
+              <span id="timeFilteredLegend"><i class="filtered"></i>滤波输出</span>
             </div>
             <div class="chart-toolbar" aria-label="时域图控制">
               <button type="button" data-chart="time" data-action="zoom-in" title="横轴放大">X+</button>
@@ -169,8 +233,8 @@
           </div>
           <div class="chart-heading-side">
             <div class="legend">
-              <span><i class="raw"></i>原始频谱</span>
-              <span><i class="filtered"></i>滤波后频谱</span>
+              <span><i class="raw"></i>合成输入频谱</span>
+              <span id="spectrumFilteredLegend"><i class="filtered"></i>滤波输出频谱</span>
             </div>
             <div class="chart-toolbar" aria-label="频谱图控制">
               <button type="button" data-chart="spectrum" data-action="zoom-in" title="横轴放大">X+</button>
