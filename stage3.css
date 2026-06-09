@@ -1,0 +1,159 @@
+.mode-explanation {
+  margin-top: 14px;
+  padding: 11px 12px;
+  border-left: 2px solid var(--acid);
+  color: var(--muted);
+  background: rgba(183, 255, 60, 0.035);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+.bit-input {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  color: var(--acid);
+  background: #08110f;
+  outline: none;
+  font-family: "Cascadia Code", Consolas, monospace;
+  letter-spacing: 0.16em;
+}
+
+.bit-input:focus {
+  border-color: var(--acid);
+}
+
+.secondary-button {
+  width: 100%;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.74rem;
+}
+
+.secondary-button:hover {
+  border-color: var(--acid);
+  color: var(--acid);
+}
+
+.bit-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 15px;
+}
+
+.bit-chips i {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--line);
+  color: var(--text);
+  background: #09120f;
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 0.75rem;
+  font-style: normal;
+}
+
+.bit-chips i.one {
+  border-color: rgba(183, 255, 60, 0.5);
+  color: var(--acid);
+}
+
+.dual-chart-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.dual-chart-grid .chart-card {
+  min-width: 0;
+}
+
+.dual-chart-grid canvas {
+  height: 360px;
+}
+
+.dual-chart-grid .chart-heading {
+  align-items: flex-start;
+}
+
+.dual-chart-grid .chart-toolbar button {
+  min-width: 32px;
+}
+
+.decision-card {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 32px;
+}
+
+.decision-card h2 {
+  margin: 0;
+}
+
+.decision-rows {
+  display: grid;
+  gap: 8px;
+}
+
+.decision-row {
+  display: grid;
+  grid-template-columns: 74px 1fr;
+  gap: 12px;
+  align-items: center;
+}
+
+.decision-row > span {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.decision-bits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.decision-bits i {
+  min-width: 24px;
+  padding: 4px 5px;
+  color: var(--text);
+  background: #09120f;
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 0.7rem;
+  font-style: normal;
+  text-align: center;
+}
+
+.decision-bits i.error {
+  color: #fff;
+  background: var(--danger);
+}
+
+#berCanvas {
+  height: 300px;
+}
+
+#digitalWaveCanvas,
+#constellationCanvas,
+#eyeCanvas {
+  touch-action: none;
+}
+
+@media (max-width: 1100px) {
+  .dual-chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .decision-card {
+    grid-template-columns: 1fr;
+  }
+}

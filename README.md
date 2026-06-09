@@ -42,12 +42,24 @@
 
 项目还提供六阶段学习路线页，可从基础频谱逐步前往数字调制、IQ 基带、信号测量与 SDR 实战。
 
+### 阶段 3：数字调制
+
+- 2-ASK / OOK、2-FSK、BPSK 和 QPSK
+- 可编辑比特序列与随机比特生成
+- 码元率、每码元采样数、Eb/N0、FSK 频率间隔和相位偏差
+- 通带波形、星座图、眼图和 BER 参考曲线
+- 理想码元与噪声接收点对照
+- 发送比特与接收判决逐位对照
+- 当前误码率、比特率、每码元比特数和频谱效率读数
+- 四个第三阶段引导实验
+
 ## 快速开始
 
 直接打开以下页面即可使用：
 
 - `index.html`：阶段 1
 - `stage2.html`：阶段 2
+- `stage3.html`：阶段 3
 - `roadmap.html`：完整学习路线
 
 也可以启动任意静态文件服务器：
@@ -94,6 +106,9 @@ rf-dsp-lab/
 ├── stage2.html
 ├── stage2.css
 ├── stage2.js
+├── stage3.html
+├── stage3.css
+├── stage3.js
 ├── styles.css
 ├── LEARNING_PATH.md
 ├── CHANGELOG.md
@@ -103,7 +118,7 @@ rf-dsp-lab/
 
 ## 当前版本
 
-`v0.2.0`：上线完整学习路线与第二阶段实验室，新增 STFT 时频分析、动态信号、AM/FM 调制、模式相关测量和跨阶段导航。
+`v0.3.0`：上线第三阶段数字调制实验室，新增 ASK/FSK/BPSK/QPSK、星座图、眼图、BER 曲线、信道噪声和判决对照。
 
 详细更新内容见 [CHANGELOG.md](CHANGELOG.md)。
 

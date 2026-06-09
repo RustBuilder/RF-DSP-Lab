@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="ASK、FSK、BPSK、QPSK、星座图、眼图和误码率中文交互实验">
+  <title>阶段 3：数字调制 | RF DSP Lab</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="stage2.css">
+  <link rel="stylesheet" href="stage3.css">
+</head>
+<body>
+  <nav class="top-nav">
+    <a class="brand" href="roadmap.html">RF DSP LAB</a>
+    <div>
+      <a href="index.html">阶段 1</a>
+      <a href="stage2.html">阶段 2</a>
+      <a class="current" href="stage3.html">阶段 3</a>
+      <a href="roadmap.html">完整路线</a>
+    </div>
+  </nav>
+
+  <header class="stage-hero">
+    <div>
+      <p class="eyebrow">LEVEL 03 · DIGITAL MODULATION</p>
+      <h1>把 0 和 1，<br><span>变成可以传输的波形。</span></h1>
+      <p class="intro">数字调制的核心是映射：把比特分组为码元，再让载波的幅度、频率或相位代表这些码元。接收端则在噪声中做出判决。</p>
+    </div>
+    <a class="route-button ghost" href="roadmap.html">查看六阶段路线</a>
+  </header>
+
+  <main class="stage-layout">
+    <aside class="control-panel stage-controls">
+      <div class="panel-heading">
+        <span>阶段 3 控制台</span>
+        <button id="resetStage3" class="text-button" type="button">恢复默认</button>
+      </div>
+
+      <section class="control-section">
+        <div class="section-index">01</div>
+        <div class="control-content">
+          <h2>调制方式</h2>
+          <label>
+            类型
+            <select id="digitalMode">
+              <option value="ask">2-ASK / OOK</option>
+              <option value="fsk">2-FSK</option>
+              <option value="bpsk" selected>BPSK</option>
+              <option value="qpsk">QPSK</option>
+            </select>
+          </label>
+          <div id="modeExplanation" class="mode-explanation"></div>
+        </div>
+      </section>
+
+      <section class="control-section">
+        <div class="section-index">02</div>
+        <div class="control-content">
+          <h2>数据与速率</h2>
+          <label>
+            比特序列
+            <input id="bitPattern" class="bit-input" type="text" value="1101001011100010" maxlength="64" spellcheck="false">
+          </label>
+          <button id="randomBits" class="secondary-button" type="button">生成随机比特</button>
+          <label>
+            码元率 <output id="symbolRateValue">1.00 kBd</output>
+            <span class="value-control">
+              <input id="symbolRateInput" class="number-input" type="number" min="100" max="20000" step="100" value="1000" inputmode="numeric" aria-label="输入码元率">
+              <span>Bd</span>
+            </span>
+            <input id="symbolRate" type="range" min="100" max="20000" step="100" value="1000">
+          </label>
+          <label>
+            每码元采样数
+            <select id="samplesPerSymbol">
+              <option value="16">16</option>
+              <option value="32" selected>32</option>
+              <option value="64">64</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section class="control-section">
+        <div class="section-index">03</div>
+        <div class="control-content">
+          <h2>信道</h2>
+          <label>
+            Eb/N0 <output id="snrValue">8 dB</output>
+            <span class="value-control">
+              <input id="snrInput" class="number-input" type="number" min="-8" max="24" step="1" value="8" inputmode="numeric" aria-label="输入 Eb/N0">
+              <span>dB</span>
+            </span>
+            <input id="snr" type="range" min="-8" max="24" step="1" value="8">
+          </label>
+          <label id="frequencySeparationGroup">
+            FSK 频率间隔 <output id="frequencySeparationValue">1.00 kHz</output>
+            <span class="value-control">
+              <input id="frequencySeparationInput" class="number-input" type="number" min="100" max="20000" step="100" value="1000" inputmode="numeric" aria-label="输入 FSK 频率间隔">
+              <span>Hz</span>
+            </span>
+            <input id="frequencySeparation" type="range" min="100" max="20000" step="100" value="1000">
+          </label>
+          <label>
+            相位偏差 <output id="phaseOffsetValue">0°</output>
+            <span class="value-control">
+              <input id="phaseOffsetInput" class="number-input" type="number" min="-180" max="180" step="1" value="0" inputmode="numeric" aria-label="输入相位偏差">
+              <span>deg</span>
+            </span>
+            <input id="phaseOffset" type="range" min="-180" max="180" step="1" value="0">
+          </label>
+          <p class="control-hint">噪声会让星座点散开；相位偏差会让整个星座旋转，并可能造成判决错误。</p>
+        </div>
+      </section>
+    </aside>
+
+    <div class="workspace">
+      <section class="concept-strip">
+        <article><small>每码元比特数</small><strong id="bitsPerSymbolMetric">1 bit</strong></article>
+        <article><small>比特率</small><strong id="bitRateMetric">1.00 kb/s</strong></article>
+        <article><small>本次误码率</small><strong id="berMetric">0.00%</strong></article>
+        <article><small>频谱效率</small><strong id="efficiencyMetric">1 bit/s/Hz</strong></article>
+      </section>
+
+      <section class="chart-card explanation-card">
+        <div>
+          <p class="chart-kicker">MAPPING RULE</p>
+          <h2 id="mappingTitle">BPSK：一个比特，两种相位</h2>
+        </div>
+        <div>
+          <p id="mappingText">比特 0 和 1 分别映射到相差 180° 的两个点。两个点距离较远，因此 BPSK 在噪声中通常很稳健。</p>
+          <div id="bitChips" class="bit-chips" aria-label="当前比特序列"></div>
+        </div>
+      </section>
+
+      <section class="chart-card">
+        <div class="chart-heading">
+          <div>
+            <p class="chart-kicker">PASSBAND WAVEFORM</p>
+            <h2>已调通带波形</h2>
+          </div>
+          <div class="chart-heading-side">
+            <span class="chart-badge" id="waveformBadge">显示 8 个码元</span>
+            <div class="chart-toolbar" aria-label="数字波形图控制">
+              <button type="button" data-digital-chart="waveform" data-action="zoom-in">X+</button>
+              <button type="button" data-digital-chart="waveform" data-action="zoom-out">X−</button>
+              <button type="button" data-digital-chart="waveform" data-action="y-in">Y+</button>
+              <button type="button" data-digital-chart="waveform" data-action="y-out">Y−</button>
+              <button type="button" data-digital-chart="waveform" data-action="auto">自动</button>
+              <button type="button" data-digital-chart="waveform" data-action="reset">复位</button>
+            </div>
+          </div>
+        </div>
+        <div class="chart-stage">
+          <canvas id="digitalWaveCanvas" aria-label="数字调制通带波形" tabindex="0"></canvas>
+          <output id="waveformCursor" class="chart-cursor">拖拽平移 · 滚轮缩放 X · Shift + 滚轮缩放 Y</output>
+        </div>
+        <div class="chart-footer">
+          <p class="chart-note" id="waveformNote">BPSK 在码元边界改变载波相位，幅度保持不变。</p>
+          <output id="waveformRange" class="range-readout"></output>
+        </div>
+      </section>
+
+      <div class="dual-chart-grid">
+        <section class="chart-card">
+          <div class="chart-heading">
+            <div>
+              <p class="chart-kicker">CONSTELLATION</p>
+              <h2>星座图</h2>
+            </div>
+            <div class="chart-heading-side">
+              <span class="chart-badge" id="constellationBadge">16 个接收点</span>
+              <div class="chart-toolbar" aria-label="星座图控制">
+                <button type="button" data-digital-chart="constellation" data-action="zoom-in">+</button>
+                <button type="button" data-digital-chart="constellation" data-action="zoom-out">−</button>
+                <button type="button" data-digital-chart="constellation" data-action="auto">自动</button>
+                <button type="button" data-digital-chart="constellation" data-action="reset">复位</button>
+              </div>
+            </div>
+          </div>
+          <div class="chart-stage">
+            <canvas id="constellationCanvas" aria-label="接收星座图" tabindex="0"></canvas>
+            <output id="constellationCursor" class="chart-cursor">拖拽平移 · 滚轮缩放</output>
+          </div>
+          <p class="chart-note">空心标记是理想码元，实心点是经过噪声和相位偏差后的接收结果。</p>
+        </section>
+
+        <section class="chart-card">
+          <div class="chart-heading">
+            <div>
+              <p class="chart-kicker">EYE DIAGRAM</p>
+              <h2>眼图</h2>
+            </div>
+            <div class="chart-heading-side">
+              <span class="chart-badge">2 个码元周期</span>
+              <div class="chart-toolbar" aria-label="眼图控制">
+                <button type="button" data-digital-chart="eye" data-action="y-in">Y+</button>
+                <button type="button" data-digital-chart="eye" data-action="y-out">Y−</button>
+                <button type="button" data-digital-chart="eye" data-action="reset">复位</button>
+              </div>
+            </div>
+          </div>
+          <div class="chart-stage">
+            <canvas id="eyeCanvas" aria-label="基带眼图" tabindex="0"></canvas>
+            <output id="eyeCursor" class="chart-cursor">Shift + 滚轮缩放 Y</output>
+          </div>
+          <p class="chart-note">眼睛越张开，判决余量越大；噪声会让轨迹变厚，并逐渐闭合眼口。</p>
+        </section>
+      </div>
+
+      <section class="chart-card">
+        <div class="chart-heading">
+          <div>
+            <p class="chart-kicker">BER REFERENCE</p>
+            <h2>误码率曲线</h2>
+          </div>
+          <span class="chart-badge" id="berBadge">当前点</span>
+        </div>
+        <div class="chart-stage">
+          <canvas id="berCanvas" aria-label="误码率参考曲线"></canvas>
+          <output id="berCursor" class="chart-cursor">横轴 Eb/N0，纵轴 BER（对数）</output>
+        </div>
+        <p class="chart-note">曲线是常见 AWGN 条件下的近似参考；实心点是当前这组有限比特实验的实际结果。</p>
+      </section>
+
+      <section class="chart-card decision-card">
+        <div>
+          <p class="chart-kicker">RECEIVER DECISION</p>
+          <h2>发送与判决对照</h2>
+        </div>
+        <div id="decisionRows" class="decision-rows"></div>
+      </section>
+
+      <section class="lesson-card stage-lessons">
+        <div>
+          <p class="chart-kicker">GUIDED LABS</p>
+          <h2>第三阶段任务</h2>
+        </div>
+        <ol>
+          <li><button type="button" data-digital-preset="compare">比较四种调制</button><span>依次切换 ASK、FSK、BPSK、QPSK，观察承载信息的物理量。</span></li>
+          <li><button type="button" data-digital-preset="noise">让星座开始扩散</button><span>降低 Eb/N0，观察接收点越过判决边界并产生误码。</span></li>
+          <li><button type="button" data-digital-preset="phase">旋转 QPSK 星座</button><span>加入 40° 相位偏差，观察四个象限整体旋转。</span></li>
+          <li><button type="button" data-digital-preset="efficiency">比较频谱效率</button><span>相同码元率下，QPSK 的比特率是 BPSK 的两倍。</span></li>
+        </ol>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <span>RF DSP Lab · 阶段 3 / 6</span>
+    <div class="footer-links">
+      <a href="stage2.html">← 返回阶段 2</a>
+      <a href="roadmap.html">下一阶段：IQ 与复数基带 →</a>
+    </div>
+  </footer>
+  <script src="stage3.js"></script>
+</body>
+</html>
