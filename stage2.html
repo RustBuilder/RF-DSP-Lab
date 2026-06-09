@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="STFT 时频分析和 AM/FM 调制中文交互实验">
+  <title>阶段 2：时频与调制 | RF DSP Lab</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="stage2.css">
+</head>
+<body>
+  <nav class="top-nav">
+    <a class="brand" href="roadmap.html">RF DSP LAB</a>
+    <div>
+      <a href="index.html">阶段 1</a>
+      <a class="current" href="stage2.html">阶段 2</a>
+      <a href="roadmap.html">完整路线</a>
+    </div>
+  </nav>
+
+  <header class="stage-hero">
+    <div>
+      <p class="eyebrow">LEVEL 02 · TIME FREQUENCY & MODULATION</p>
+      <h1>频谱不只会变化，<br><span>它还会随时间移动。</span></h1>
+      <p class="intro">静态 FFT 告诉你“有哪些频率”，STFT 告诉你“这些频率什么时候出现”。再往前一步，调制就是让载波按照消息的规律变化。</p>
+    </div>
+    <a class="route-button ghost" href="roadmap.html">查看六阶段路线</a>
+  </header>
+
+  <main class="stage-layout">
+    <aside class="control-panel stage-controls">
+      <div class="panel-heading">
+        <span>阶段 2 控制台</span>
+        <button id="resetStage2" class="text-button" type="button">恢复默认</button>
+      </div>
+
+      <section class="control-section">
+        <div class="section-index">01</div>
+        <div class="control-content">
+          <h2>实验模式</h2>
+          <label>
+            主题
+            <select id="experimentMode">
+              <option value="stft" selected>STFT 时频分析</option>
+              <option value="am">AM 幅度调制</option>
+              <option value="fm">FM 频率调制</option>
+            </select>
+          </label>
+          <label id="signalKindGroup">
+            动态信号
+            <select id="signalKind">
+              <option value="chirp" selected>线性扫频</option>
+              <option value="hop">跳频</option>
+              <option value="burst">脉冲音</option>
+              <option value="twoTone">双音交替</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section class="control-section">
+        <div class="section-index">02</div>
+        <div class="control-content">
+          <h2>信号参数</h2>
+          <label id="carrierGroup">
+            载波频率 <output id="carrierValue">800 Hz</output>
+            <span class="value-control">
+              <input id="carrierInput" class="number-input" type="number" min="100" max="20000" step="1" value="800" inputmode="numeric" aria-label="输入载波频率">
+              <span>Hz</span>
+            </span>
+            <input id="carrier" type="range" min="100" max="20000" step="1" value="800">
+          </label>
+          <label id="messageGroup">
+            消息频率 <output id="messageValue">40 Hz</output>
+            <span class="value-control">
+              <input id="messageInput" class="number-input" type="number" min="1" max="5000" step="1" value="40" inputmode="numeric" aria-label="输入消息频率">
+              <span>Hz</span>
+            </span>
+            <input id="message" type="range" min="1" max="5000" step="1" value="40">
+          </label>
+          <label id="depthGroup">
+            AM 调制度 <output id="depthValue">70%</output>
+            <input id="depth" type="range" min="0" max="140" step="5" value="70">
+          </label>
+          <label id="deviationGroup" hidden>
+            FM 频偏 <output id="deviationValue">220 Hz</output>
+            <span class="value-control">
+              <input id="deviationInput" class="number-input" type="number" min="1" max="10000" step="1" value="220" inputmode="numeric" aria-label="输入 FM 频偏">
+              <span>Hz</span>
+            </span>
+            <input id="deviation" type="range" min="1" max="10000" step="1" value="220">
+          </label>
+          <label>
+            噪声 <output id="stageNoiseValue">2%</output>
+            <input id="stageNoise" type="range" min="0" max="40" step="1" value="2">
+          </label>
+        </div>
+      </section>
+
+      <section class="control-section">
+        <div class="section-index">03</div>
+        <div class="control-content">
+          <h2>STFT 参数</h2>
+          <label>
+            采样率 <output id="stageSampleRateValue">自动 · 4.096 kHz</output>
+            <select id="stageSampleRate">
+              <option value="auto" selected>自动选择（推荐）</option>
+              <option value="4096">4.096 kHz</option>
+              <option value="8000">8 kHz</option>
+              <option value="16000">16 kHz</option>
+              <option value="32000">32 kHz</option>
+              <option value="44100">44.1 kHz</option>
+              <option value="48000">48 kHz</option>
+              <option value="96000">96 kHz</option>
+            </select>
+          </label>
+          <label>
+            窗长
+            <select id="stftSize">
+              <option value="64">64 点 · 时间更清楚</option>
+              <option value="128">128 点</option>
+              <option value="256" selected>256 点 · 均衡</option>
+              <option value="512">512 点</option>
+              <option value="1024">1024 点 · 频率更清楚</option>
+            </select>
+          </label>
+          <label>
+            重叠率 <output id="overlapValue">75%</output>
+            <input id="overlap" type="range" min="0" max="90" step="5" value="75">
+          </label>
+          <p id="resolutionHint" class="control-hint"></p>
+        </div>
+      </section>
+    </aside>
+
+    <div class="workspace">
+      <section class="concept-strip">
+        <article><small id="metricOneLabel">观察时长</small><strong id="metricOneValue">1.00 s</strong></article>
+        <article><small id="metricTwoLabel">采样率</small><strong id="metricTwoValue">4.096 kHz</strong></article>
+        <article><small id="metricThreeLabel">时间分辨率</small><strong id="timeResolution">62.5 ms</strong></article>
+        <article><small id="metricFourLabel">频率分辨率</small><strong id="frequencyResolution">16 Hz</strong></article>
+      </section>
+
+      <section class="chart-card explanation-card">
+        <div>
+          <p class="chart-kicker">WHAT TO NOTICE</p>
+          <h2 id="lessonTitle">扫频信号为何是一条斜线？</h2>
+        </div>
+        <p id="lessonText">因为信号的瞬时频率随时间连续升高。普通 FFT 会把整段信号压成一张频谱，STFT 则保留了变化发生的时间。</p>
+      </section>
+
+      <section class="chart-card">
+        <div class="chart-heading">
+          <div>
+            <p class="chart-kicker">TIME DOMAIN</p>
+            <h2 id="waveTitle">动态信号波形</h2>
+          </div>
+          <div class="chart-heading-side">
+            <div class="legend">
+              <span><i class="raw"></i><b id="referenceLegend">频率轨迹</b></span>
+              <span><i class="filtered"></i><b id="signalLegend">动态信号</b></span>
+            </div>
+            <span class="chart-badge" id="timeViewBadge">观察前 80 ms</span>
+            <div class="chart-toolbar" aria-label="第二阶段时域图控制">
+              <button type="button" data-stage-chart="time" data-action="zoom-in">X+</button>
+              <button type="button" data-stage-chart="time" data-action="zoom-out">X−</button>
+              <button type="button" data-stage-chart="time" data-action="y-in">Y+</button>
+              <button type="button" data-stage-chart="time" data-action="y-out">Y−</button>
+              <button type="button" data-stage-chart="time" data-action="auto">自动</button>
+              <button type="button" data-stage-chart="time" data-action="reset">复位</button>
+            </div>
+          </div>
+        </div>
+        <div class="chart-stage">
+          <canvas id="stageTimeCanvas" aria-label="第二阶段时域图" tabindex="0"></canvas>
+          <output id="stageTimeCursor" class="chart-cursor">移动鼠标读取时间与幅度</output>
+        </div>
+        <div class="chart-footer">
+          <p class="chart-note" id="waveNote">扫频信号的振荡会逐渐变密，意味着瞬时频率正在升高。</p>
+          <output id="stageTimeRange" class="range-readout">0 – 80 ms</output>
+        </div>
+      </section>
+
+      <section class="chart-card">
+        <div class="chart-heading">
+          <div>
+            <p class="chart-kicker">SPECTROGRAM</p>
+            <h2>STFT 时频图</h2>
+          </div>
+          <div class="chart-heading-side">
+            <div class="heat-legend"><span>弱</span><i></i><span>强</span></div>
+            <span class="chart-badge" id="stftBadge">256 点 · 75% 重叠</span>
+            <div class="chart-toolbar" aria-label="STFT 时频图控制">
+              <button type="button" data-stage-chart="spectrogram" data-action="zoom-in">X+</button>
+              <button type="button" data-stage-chart="spectrogram" data-action="zoom-out">X−</button>
+              <button type="button" data-stage-chart="spectrogram" data-action="y-in">Y+</button>
+              <button type="button" data-stage-chart="spectrogram" data-action="y-out">Y−</button>
+              <button type="button" data-stage-chart="spectrogram" data-action="auto">自动</button>
+              <button type="button" data-stage-chart="spectrogram" data-action="reset">复位</button>
+            </div>
+          </div>
+        </div>
+        <div class="chart-stage">
+          <canvas id="spectrogramCanvas" aria-label="STFT 时频图" tabindex="0"></canvas>
+          <output id="spectrogramCursor" class="chart-cursor">移动鼠标读取时间与频率</output>
+        </div>
+        <div class="chart-footer">
+          <p class="chart-note">横轴是时间，纵轴是频率，颜色表示能量。短窗更擅长定位时间，长窗更擅长区分接近的频率。</p>
+          <output id="spectrogramRange" class="range-readout">0 – 1.00 s · 0 – 2.048 kHz</output>
+        </div>
+      </section>
+
+      <section class="chart-card">
+        <div class="chart-heading">
+          <div>
+            <p class="chart-kicker">FULL FFT</p>
+            <h2>整段信号频谱</h2>
+          </div>
+          <div class="chart-heading-side">
+            <span class="chart-badge" id="peakBadge">峰值检测中</span>
+            <div class="chart-toolbar" aria-label="第二阶段频谱图控制">
+              <button type="button" data-stage-chart="spectrum" data-action="zoom-in">X+</button>
+              <button type="button" data-stage-chart="spectrum" data-action="zoom-out">X−</button>
+              <button type="button" data-stage-chart="spectrum" data-action="y-in">Y+</button>
+              <button type="button" data-stage-chart="spectrum" data-action="y-out">Y−</button>
+              <button type="button" data-stage-chart="spectrum" data-action="auto">自动</button>
+              <button type="button" data-stage-chart="spectrum" data-action="reset">复位</button>
+            </div>
+          </div>
+        </div>
+        <div class="chart-stage">
+          <canvas id="stageSpectrumCanvas" aria-label="整段 FFT 频谱" tabindex="0"></canvas>
+          <output id="stageSpectrumCursor" class="chart-cursor">移动鼠标读取频率与幅度</output>
+        </div>
+        <div class="chart-footer">
+          <p class="chart-note" id="spectrumNote">与上方时频图对照：普通 FFT 能看到频率范围，却看不到各频率出现的先后顺序。</p>
+          <output id="stageSpectrumRange" class="range-readout">0 – 2.048 kHz · -80 – 0 dB</output>
+        </div>
+      </section>
+
+      <section class="lesson-card stage-lessons">
+        <div>
+          <p class="chart-kicker">GUIDED LABS</p>
+          <h2>第二阶段任务</h2>
+        </div>
+        <ol>
+          <li><button type="button" data-stage-preset="resolution">交换两种分辨率</button><span>切换 64 点与 1024 点窗，观察斜线和频率宽度。</span></li>
+          <li><button type="button" data-stage-preset="am">找到 AM 的三个尖峰</button><span>载波两侧会出现间隔等于消息频率的边带。</span></li>
+          <li><button type="button" data-stage-preset="overmod">制造 AM 过调制</button><span>把调制度提高到 120%，观察包络穿过零点。</span></li>
+          <li><button type="button" data-stage-preset="fm">扩大 FM 频偏</button><span>频偏越大，时频轨迹和占用带宽越宽。</span></li>
+        </ol>
+      </section>
+    </div>
+  </main>
+
+  <footer>
+    <span>RF DSP Lab · 阶段 2 / 6</span>
+    <div class="footer-links">
+      <a href="index.html">← 返回阶段 1</a>
+      <a href="roadmap.html">查看完整路线 →</a>
+    </div>
+  </footer>
+  <script src="stage2.js"></script>
+</body>
+</html>

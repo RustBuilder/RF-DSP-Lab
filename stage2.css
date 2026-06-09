@@ -1,0 +1,363 @@
+.top-nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 40px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(8, 16, 15, 0.94);
+  backdrop-filter: blur(14px);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.top-nav a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.82rem;
+}
+
+.top-nav div {
+  display: flex;
+  gap: 22px;
+}
+
+.top-nav .brand,
+.top-nav a:hover,
+.top-nav .current {
+  color: var(--acid);
+}
+
+.top-nav .brand {
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.stage-hero,
+.route-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 30px;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 54px 40px 42px;
+  border-bottom: 1px solid var(--line);
+}
+
+.route-hero {
+  display: block;
+  max-width: 1400px;
+  padding-top: 72px;
+}
+
+.route-hero > p:last-child {
+  max-width: 720px;
+  color: var(--muted);
+  font-size: 1.05rem;
+  line-height: 1.8;
+}
+
+.route-button {
+  display: inline-block;
+  padding: 11px 15px;
+  border: 1px solid var(--acid);
+  color: #08100f;
+  background: var(--acid);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.route-button.ghost {
+  flex: 0 0 auto;
+  color: var(--acid);
+  background: transparent;
+}
+
+.stage-layout {
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 28px;
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 32px 40px 60px;
+}
+
+.stage-controls {
+  position: sticky;
+  top: 72px;
+}
+
+.concept-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  margin-bottom: 20px;
+  border: 1px solid var(--line);
+  background: var(--line);
+}
+
+.concept-strip article {
+  padding: 18px;
+  background: var(--panel);
+}
+
+.concept-strip small,
+.concept-strip strong {
+  display: block;
+}
+
+.concept-strip small {
+  margin-bottom: 7px;
+  color: var(--muted);
+}
+
+.concept-strip strong {
+  color: var(--acid);
+  font-family: "Cascadia Code", Consolas, monospace;
+  line-height: 1.35;
+}
+
+.explanation-card {
+  display: grid;
+  grid-template-columns: minmax(230px, 0.8fr) 1.5fr;
+  gap: 34px;
+  align-items: center;
+  border-left: 3px solid var(--acid);
+}
+
+.explanation-card h2 {
+  margin: 0;
+}
+
+.explanation-card > p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.heat-legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
+.heat-legend i {
+  width: 100px;
+  height: 8px;
+  background: linear-gradient(90deg, #07120f, #126b72, #b7ff3c, #fff7b1);
+}
+
+#spectrogramCanvas {
+  image-rendering: auto;
+}
+
+.chart-badge {
+  display: inline-block;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: #09120f;
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 0.68rem;
+}
+
+.legend b {
+  font-weight: 400;
+}
+
+.warning-text {
+  color: var(--danger) !important;
+}
+
+.route-main {
+  display: block;
+  max-width: 1400px;
+  padding: 34px 40px 70px;
+}
+
+.route-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 18px;
+}
+
+.route-card {
+  position: relative;
+  min-height: 390px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  background: rgba(13, 23, 21, 0.84);
+}
+
+.route-card.active {
+  border-color: rgba(183, 255, 60, 0.5);
+}
+
+.route-number {
+  color: rgba(183, 255, 60, 0.2);
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 4rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.route-state {
+  display: inline-block;
+  margin: 20px 0 10px;
+  padding: 4px 7px;
+  border: 1px solid rgba(183, 255, 60, 0.4);
+  color: var(--acid);
+  font-size: 0.68rem;
+}
+
+.route-state.muted {
+  border-color: var(--line);
+  color: var(--muted);
+}
+
+.route-card h2 {
+  margin: 4px 0 13px;
+  font-size: 1.4rem;
+}
+
+.route-card p:not(.route-state),
+.route-card li {
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.route-card ul {
+  margin: 20px 0 26px;
+  padding-left: 18px;
+}
+
+.route-card li {
+  margin: 5px 0;
+  font-size: 0.82rem;
+}
+
+.route-card .route-button {
+  position: absolute;
+  bottom: 28px;
+  left: 28px;
+}
+
+footer a {
+  color: var(--acid);
+  text-decoration: none;
+}
+
+.next-stage-link {
+  display: grid;
+  grid-template-columns: auto auto 32px;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  color: var(--muted);
+  text-decoration: none;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease;
+}
+
+.next-stage-link span {
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.next-stage-link strong {
+  color: var(--text);
+  font-weight: 500;
+}
+
+.next-stage-link i {
+  color: var(--acid);
+  font-size: 1.4rem;
+  font-style: normal;
+  text-align: right;
+  transition: transform 160ms ease;
+}
+
+.next-stage-link:hover,
+.next-stage-link:focus-visible {
+  border-color: rgba(183, 255, 60, 0.45);
+  color: var(--acid);
+  background: rgba(183, 255, 60, 0.04);
+  outline: none;
+}
+
+.next-stage-link:hover i,
+.next-stage-link:focus-visible i {
+  transform: translateX(4px);
+}
+
+.footer-links {
+  display: flex;
+  gap: 24px;
+}
+
+@media (max-width: 1050px) {
+  .route-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 960px) {
+  .stage-layout {
+    grid-template-columns: 1fr;
+    padding: 24px 22px 50px;
+  }
+
+  .stage-controls {
+    position: static;
+  }
+
+  .stage-hero,
+  .route-hero {
+    padding: 40px 22px;
+  }
+}
+
+@media (max-width: 680px) {
+  .top-nav {
+    padding: 13px 18px;
+  }
+
+  .top-nav div {
+    gap: 12px;
+  }
+
+  .stage-hero {
+    flex-direction: column;
+  }
+
+  .next-stage-link {
+    grid-template-columns: 1fr 28px;
+  }
+
+  .next-stage-link span {
+    display: none;
+  }
+
+  .concept-strip,
+  .route-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .explanation-card {
+    grid-template-columns: 1fr;
+  }
+
+  .route-main {
+    padding: 24px 22px 50px;
+  }
+}

@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>学习路线 | RF DSP Lab</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="stage2.css">
+</head>
+<body>
+  <nav class="top-nav">
+    <a class="brand" href="roadmap.html">RF DSP LAB</a>
+    <div>
+      <a href="index.html">阶段 1</a>
+      <a href="stage2.html">阶段 2</a>
+    </div>
+  </nav>
+
+  <header class="route-hero">
+    <p class="eyebrow">FROM SIGNALS TO SOFTWARE RADIO</p>
+    <h1>从入门到精通，<br><span>每一步都有实验。</span></h1>
+    <p>这不是功能清单，而是一条学习顺序。每个阶段先建立直觉，再理解公式，最后完成一个无线电任务。</p>
+  </header>
+
+  <main class="route-main">
+    <section class="route-grid">
+      <article class="route-card active">
+        <div class="route-number">01</div>
+        <p class="route-state">已上线</p>
+        <h2>信号与频谱</h2>
+        <p>理解采样、时域、FFT、频谱泄漏、窗函数以及低通和高通滤波。</p>
+        <ul>
+          <li>双音与噪声</li>
+          <li>奈奎斯特与混叠</li>
+          <li>FIR / IIR 滤波器</li>
+        </ul>
+        <a class="route-button" href="index.html">进入阶段 1</a>
+      </article>
+
+      <article class="route-card active">
+        <div class="route-number">02</div>
+        <p class="route-state">本次新增</p>
+        <h2>时频与模拟调制</h2>
+        <p>通过 STFT 瀑布图观察扫频、跳频和脉冲，并理解 AM、FM 如何把消息搬到载波上。</p>
+        <ul>
+          <li>窗长与时间/频率分辨率</li>
+          <li>AM 边带和调制度</li>
+          <li>FM 频偏和带宽</li>
+        </ul>
+        <a class="route-button" href="stage2.html">进入阶段 2</a>
+      </article>
+
+      <article class="route-card">
+        <div class="route-number">03</div>
+        <p class="route-state muted">规划中</p>
+        <h2>数字调制</h2>
+        <p>从比特序列出发，观察 ASK、FSK、BPSK、QPSK 的波形、频谱和抗噪能力。</p>
+        <ul>
+          <li>码元与比特率</li>
+          <li>匹配滤波</li>
+          <li>误码率</li>
+        </ul>
+      </article>
+
+      <article class="route-card">
+        <div class="route-number">04</div>
+        <p class="route-state muted">规划中</p>
+        <h2>IQ 与基带</h2>
+        <p>掌握复数信号、I/Q 正交分量、星座图、眼图和载波恢复。</p>
+        <ul>
+          <li>复数基带</li>
+          <li>星座与 EVM</li>
+          <li>同步与频偏</li>
+        </ul>
+      </article>
+
+      <article class="route-card">
+        <div class="route-number">05</div>
+        <p class="route-state muted">规划中</p>
+        <h2>信号测量</h2>
+        <p>导入 WAV、CSV 和 IQ 文件，进行频偏、带宽、SNR、占用时间与符号率测量。</p>
+        <ul>
+          <li>文件解析</li>
+          <li>游标与峰值检测</li>
+          <li>测量报告</li>
+        </ul>
+      </article>
+
+      <article class="route-card">
+        <div class="route-number">06</div>
+        <p class="route-state muted">规划中</p>
+        <h2>软件无线电实战</h2>
+        <p>连接 RTL-SDR 或本地采集后端，完成广播 FM、航空 AM 和简单数字信号接收。</p>
+        <ul>
+          <li>设备与增益</li>
+          <li>调谐和抽取</li>
+          <li>完整接收链</li>
+        </ul>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
